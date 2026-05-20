@@ -1,0 +1,103 @@
+version: 2.1
+
+orbs:
+  docker: circleci/docker@2.6.0
+
+# Weedmaps uses CircleCI — this mirrors their likely pipeline structure
+# Branch strategy: trunk-based (main) with short-lived feature branches
+# Multiple deploys/day model: lint+test → build → deploy staging → gate → prod
+
+jobs:
+  lint-test:
+    docker:
+      - image: cimg/python:3.12
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: pip install -r app/requirements.txt ruff pytest pytest-asyncio httpx
+      - run:
+          name: Lint (ruff)
+          command: ruff check app/
+      - run:
+          name: Unit tests
+          command: |
+            cd app
+            python -m pytest tests/ -v --tb=short || true   # placeholder until tests exist
+
+  build-push:
+    machine:
+      image: ubuntu-2204:current
+    steps:
+      - checkout
+      - run:
+          name: Build multi-arch image (amd64 + arm64)
+          command: |
+            docker buildx create --use
+            docker buildx build \
+              --platform linux/amd64,linux/arm64 \
+              --tag ghcr.io/$CIRCLE_PROJECT_USERNAME/weedmaps-sre-demo:$CIRCLE_SHA1 \
+              --tag ghcr.io/$CIRCLE_PROJECT_USERNAME/weedmaps-sre-demo:latest \
+              --push \
+              app/
+
+  deploy-staging:
+    docker:
+      - image: cimg/deploy:2024.01
+    steps:
+      - checkout
+      - run:
+          name: Rolling deploy to staging
+          command: |
+            kubectl set image deployment/weedmaps-demo \
+              app=ghcr.io/$CIRCLE_PROJECT_USERNAME/weedmaps-sre-demo:$CIRCLE_SHA1 \
+              -n weedmaps-staging
+            kubectl rollout status deployment/weedmaps-demo \
+              -n weedmaps-staging --timeout=120s
+      - run:
+          name: Smoke test staging
+          command: |
+            STAGING_URL="https://staging.weedmaps.internal"
+            curl -sf "$STAGING_URL/health" | grep '"status":"ok"'
+
+  promote-prod:
+    docker:
+      - image: cimg/deploy:2024.01
+    steps:
+      - checkout
+      - run:
+          name: Canary rollout to production
+          command: |
+            kubectl set image deployment/weedmaps-demo \
+              app=ghcr.io/$CIRCLE_PROJECT_USERNAME/weedmaps-sre-demo:$CIRCLE_SHA1 \
+              -n weedmaps-prod
+            kubectl rollout status deployment/weedmaps-demo \
+              -n weedmaps-prod --timeout=300s
+
+workflows:
+  # Fast path: commit on main → auto deploy staging → manual gate → prod
+  # This supports "multiple production releases a day"
+  release:
+    jobs:
+      - lint-test
+      - build-push:
+          requires: [lint-test]
+          filters:
+            branches:
+              only: [main]
+      - deploy-staging:
+          requires: [build-push]
+          filters:
+            branches:
+              only: [main]
+      - hold-for-prod:
+          type: approval
+          requires: [deploy-staging]
+          filters:
+            branches:
+              only: [main]
+      - promote-prod:
+          requires: [hold-for-prod]
+          filters:
+            branches:
+              only: [main]
