@@ -1,5 +1,5 @@
 # devops-wm-practice
-SRE practice repo for Weedmaps — built around job description requirements.
+SRE practice repo for wm — built around job description requirements.
 
 ## Start everything (60 seconds)
 

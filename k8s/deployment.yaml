@@ -33,7 +33,8 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: app
-          image: ghcr.io/YOUR_ORG/wm-sre-demo:latest
+          image: wm-sre-demo:local
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           env:
@@ -62,6 +63,7 @@ spec:
             failureThreshold: 3
           securityContext:
             runAsNonRoot: true
+            runAsUser: 1001
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             capabilities:
