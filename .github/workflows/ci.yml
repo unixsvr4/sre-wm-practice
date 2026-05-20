@@ -28,4 +28,4 @@ jobs:
           context: app/
           platforms: linux/amd64,linux/arm64
           push: false   # set to true + add registry login for real CI
-          tags: weedmaps-sre-demo:${{ github.sha }}
+          tags: wm-sre-demo:${{ github.sha }}

@@ -5,7 +5,7 @@ groups:
       - alert: HighP99Latency
         expr: |
           histogram_quantile(0.99,
-            sum(rate(http_request_duration_seconds_bucket{job="weedmaps-demo"}[5m])) by (le, endpoint)
+            sum(rate(http_request_duration_seconds_bucket{job="wm-demo"}[5m])) by (le, endpoint)
           ) > 0.5
         for: 3m
         labels:
@@ -18,8 +18,8 @@ groups:
       # ── TRAFFIC ────────────────────────────────────────────────────────────
       - alert: TrafficSpike
         expr: |
-          sum(rate(http_requests_total{job="weedmaps-demo"}[5m]))
-          > 2 * sum(rate(http_requests_total{job="weedmaps-demo"}[30m]))
+          sum(rate(http_requests_total{job="wm-demo"}[5m]))
+          > 2 * sum(rate(http_requests_total{job="wm-demo"}[30m]))
         for: 2m
         labels:
           severity: warning
@@ -31,9 +31,9 @@ groups:
       # ── ERRORS ─────────────────────────────────────────────────────────────
       - alert: ErrorRateHigh
         expr: |
-          sum(rate(http_requests_total{job="weedmaps-demo", status_code=~"5.."}[5m]))
+          sum(rate(http_requests_total{job="wm-demo", status_code=~"5.."}[5m]))
           /
-          sum(rate(http_requests_total{job="weedmaps-demo"}[5m])) > 0.01
+          sum(rate(http_requests_total{job="wm-demo"}[5m])) > 0.01
         for: 2m
         labels:
           severity: critical
@@ -46,9 +46,9 @@ groups:
         expr: |
           (
             1 - (
-              sum(rate(http_requests_total{job="weedmaps-demo", status_code=~"5.."}[1h]))
+              sum(rate(http_requests_total{job="wm-demo", status_code=~"5.."}[1h]))
               /
-              sum(rate(http_requests_total{job="weedmaps-demo"}[1h]))
+              sum(rate(http_requests_total{job="wm-demo"}[1h]))
             )
           ) < 0.999
         for: 5m
@@ -61,7 +61,7 @@ groups:
 
       # ── SATURATION ─────────────────────────────────────────────────────────
       - alert: HighConcurrency
-        expr: http_requests_in_flight{job="weedmaps-demo"} > 50
+        expr: http_requests_in_flight{job="wm-demo"} > 50
         for: 1m
         labels:
           severity: warning

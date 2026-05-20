@@ -3,7 +3,7 @@ version: 2.1
 orbs:
   docker: circleci/docker@2.6.0
 
-# Weedmaps uses CircleCI — this mirrors their likely pipeline structure
+# Wm uses CircleCI — this mirrors their likely pipeline structure
 # Branch strategy: trunk-based (main) with short-lived feature branches
 # Multiple deploys/day model: lint+test → build → deploy staging → gate → prod
 
@@ -36,8 +36,8 @@ jobs:
             docker buildx create --use
             docker buildx build \
               --platform linux/amd64,linux/arm64 \
-              --tag ghcr.io/$CIRCLE_PROJECT_USERNAME/weedmaps-sre-demo:$CIRCLE_SHA1 \
-              --tag ghcr.io/$CIRCLE_PROJECT_USERNAME/weedmaps-sre-demo:latest \
+              --tag ghcr.io/$CIRCLE_PROJECT_USERNAME/wm-sre-demo:$CIRCLE_SHA1 \
+              --tag ghcr.io/$CIRCLE_PROJECT_USERNAME/wm-sre-demo:latest \
               --push \
               app/
 
@@ -49,15 +49,15 @@ jobs:
       - run:
           name: Rolling deploy to staging
           command: |
-            kubectl set image deployment/weedmaps-demo \
-              app=ghcr.io/$CIRCLE_PROJECT_USERNAME/weedmaps-sre-demo:$CIRCLE_SHA1 \
-              -n weedmaps-staging
-            kubectl rollout status deployment/weedmaps-demo \
-              -n weedmaps-staging --timeout=120s
+            kubectl set image deployment/wm-demo \
+              app=ghcr.io/$CIRCLE_PROJECT_USERNAME/wm-sre-demo:$CIRCLE_SHA1 \
+              -n wm-staging
+            kubectl rollout status deployment/wm-demo \
+              -n wm-staging --timeout=120s
       - run:
           name: Smoke test staging
           command: |
-            STAGING_URL="https://staging.weedmaps.internal"
+            STAGING_URL="https://staging.wm.internal"
             curl -sf "$STAGING_URL/health" | grep '"status":"ok"'
 
   promote-prod:
@@ -68,11 +68,11 @@ jobs:
       - run:
           name: Canary rollout to production
           command: |
-            kubectl set image deployment/weedmaps-demo \
-              app=ghcr.io/$CIRCLE_PROJECT_USERNAME/weedmaps-sre-demo:$CIRCLE_SHA1 \
-              -n weedmaps-prod
-            kubectl rollout status deployment/weedmaps-demo \
-              -n weedmaps-prod --timeout=300s
+            kubectl set image deployment/wm-demo \
+              app=ghcr.io/$CIRCLE_PROJECT_USERNAME/wm-sre-demo:$CIRCLE_SHA1 \
+              -n wm-prod
+            kubectl rollout status deployment/wm-demo \
+              -n wm-prod --timeout=300s
 
 workflows:
   # Fast path: commit on main → auto deploy staging → manual gate → prod

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Generate steady traffic against the weedmaps demo app so golden signals appear in Grafana
+# Generate steady traffic against the wm demo app so golden signals appear in Grafana
 BASE="${1:-http://localhost:8080}"
 echo "Sending traffic to $BASE — Ctrl+C to stop"
 echo "Watch dashboards at http://localhost:3000"

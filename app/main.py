@@ -1,5 +1,5 @@
 """
-Weedmaps SRE demo — FastAPI microservice
+Wm SRE demo — FastAPI microservice
 Demonstrates: four golden signals, OpenTelemetry traces, structured JSON logging.
 """
 import os
@@ -61,7 +61,7 @@ REQUESTS_IN_FLIGHT = Gauge(
     "HTTP requests currently being processed",
 )
 
-app = FastAPI(title="weedmaps-sre-demo", version="1.0.0")
+app = FastAPI(title="wm-sre-demo", version="1.0.0")
 
 
 @app.middleware("http")

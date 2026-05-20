@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Synthetic monitor — simulates real user journeys to validate SLOs externally.
-Weedmaps explicitly calls this out in their JD: "Create and refine synthetic monitoring flows."
+Wm explicitly calls this out in their JD: "Create and refine synthetic monitoring flows."
 
 Key distinction from passive monitoring:
   Passive = wait for real users to trigger errors

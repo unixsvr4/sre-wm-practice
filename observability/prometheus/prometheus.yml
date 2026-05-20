@@ -12,7 +12,7 @@ alerting:
 
 scrape_configs:
   # App golden signals
-  - job_name: 'weedmaps-demo'
+  - job_name: 'wm-demo'
     static_configs:
       - targets: ['app:8080']
     metrics_path: /metrics

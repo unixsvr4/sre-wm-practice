@@ -1,5 +1,5 @@
-# devops-weedmaps-practice
-SRE interview practice repo for Weedmaps — built around their specific JD requirements.
+# devops-wm-practice
+SRE practice repo for Weedmaps — built around job description requirements.
 
 ## Start everything (60 seconds)
 
@@ -62,7 +62,7 @@ Output shows: success rate, error budget total, budget consumed, budget remainin
 ---
 
 ### 3 — Distributed tracing in Jaeger
-Open http://localhost:16686 → select service `weedmaps-sre-demo` → Find Traces.
+Open http://localhost:16686 → select service `wm-sre-demo` → Find Traces.
 
 **What to say:** "OpenTelemetry is the convergence of OpenTracing, OpenCensus, and OpenMetrics
 into one vendor-neutral standard. Every span shows exact latency per operation — DB calls,
@@ -149,6 +149,6 @@ Everything in this repo uses OTel:
 ```bash
 kubectl config use-context orbstack
 kubectl apply -f k8s/
-kubectl get pods -n weedmaps-demo
+kubectl get pods -n wm-demo
 ```
 *(Update the image in `k8s/deployment.yaml` to your registry first)*

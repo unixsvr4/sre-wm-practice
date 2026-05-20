@@ -1,13 +1,13 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: weedmaps-demo
-  namespace: weedmaps-demo
+  name: wm-demo
+  namespace: wm-demo
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: weedmaps-demo
+    name: wm-demo
   minReplicas: 2
   maxReplicas: 10
   metrics:

@@ -1,4 +1,4 @@
-# EKS cluster — Weedmaps runs 100% K8s on AWS
+# EKS cluster — Wm runs 100% K8s on AWS
 # Highlights: managed node groups, IRSA, cluster autoscaler-ready, CloudWatch logs
 
 terraform {
@@ -6,7 +6,7 @@ terraform {
     aws = { source = "hashicorp/aws", version = "~> 5.0" }
   }
   backend "s3" {
-    bucket         = "weedmaps-tfstate"
+    bucket         = "wm-tfstate"
     key            = "eks/terraform.tfstate"
     region         = "us-west-2"
     encrypt        = true
@@ -19,11 +19,11 @@ provider "aws" {
 }
 
 variable "region"       { default = "us-west-2" }
-variable "cluster_name" { default = "weedmaps-prod" }
+variable "cluster_name" { default = "wm-prod" }
 variable "k8s_version"  { default = "1.30" }
 
 # VPC data (assumes VPC/subnets exist; typical in a mature org)
-data "aws_vpc" "main" { tags = { Name = "weedmaps-vpc" } }
+data "aws_vpc" "main" { tags = { Name = "wm-vpc" } }
 data "aws_subnets" "private" {
   filter {
     name   = "tag:Tier"

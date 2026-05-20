@@ -3,7 +3,7 @@
 SLO Error Budget Report — run after generate_traffic.sh has been running for a few minutes.
 Usage: python slo_report.py [--prometheus http://localhost:9090] [--window 1h]
 
-Demonstrates: SLI/SLO/SLA understanding the Weedmaps JD explicitly requires.
+Demonstrates: SLI/SLO/SLA understanding the Wm JD explicitly requires.
   SLI = measured success rate (what we observe)
   SLO = 99.9% success rate (what we promise internally)
   SLA = contractual version of the SLO (external commitment)
@@ -34,8 +34,8 @@ def main():
 
     w = args.window
     try:
-        total = promql(args.prometheus, f'sum(increase(http_requests_total{{job="weedmaps-demo"}}[{w}]))')
-        errors = promql(args.prometheus, f'sum(increase(http_requests_total{{job="weedmaps-demo",status_code=~"5.."}}[{w}]))')
+        total = promql(args.prometheus, f'sum(increase(http_requests_total{{job="wm-demo"}}[{w}]))')
+        errors = promql(args.prometheus, f'sum(increase(http_requests_total{{job="wm-demo",status_code=~"5.."}}[{w}]))')
     except Exception as e:
         print(f"Cannot reach Prometheus: {e}")
         print("Make sure docker compose is running and traffic has been generated.")
