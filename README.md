@@ -36,8 +36,8 @@ sre-wm-practice/
 ├── scripts/
 │   ├── synthetic_monitor.py          ← Scripted user journeys, rolling availability %
 │   └── toil_check.py                 ← Scans for CrashLoopBackOff pods, optional auto-restart
-├── .circleci/config.yml              ← CircleCI pipeline (their CI tool)
-├── .github/workflows/ci.yml          ← GitHub Actions equivalent
+├── .circleci/config.yml              ← CircleCI reference (Weedmaps uses CircleCI in prod)
+├── .github/workflows/ci.yml          ← GitHub Actions (this repo — runs on every push to main)
 ├── terraform/eks.tf                  ← EKS cluster reference (Graviton2, IRSA, private API)
 └── shutdown.sh                       ← Stops everything cleanly
 ```
@@ -463,7 +463,7 @@ Stack:    FastAPI → OTel Collector → Jaeger (traces) + Prometheus → Grafan
 Signals:  Traffic (rps) + Errors (5xx%) + Latency (p99) + Saturation (in-flight)
 SLO:      99.9% success rate → 43.8 min/month error budget → freeze deploys when exhausted
 OTel:     OpenTracing + OpenCensus + OpenMetrics merged → one SDK, vendor-neutral wire format
-CI/CD:    CircleCI → trunk-based → multi-arch build → staging smoke test → manual gate → prod
+CI/CD:    GitHub Actions (this repo) / CircleCI (Weedmaps prod) → trunk-based → multi-arch → staging smoke → manual gate → prod
 K8s:      HPA 2→10 replicas, maxUnavailable=0, non-root, readOnlyRootFilesystem, drop ALL caps
 Toil:     Automate CrashLoopBackOff restarts → on-call gets signal not noise
 Synth:    Scripted user journeys from outside the cluster → catch outages before users do
