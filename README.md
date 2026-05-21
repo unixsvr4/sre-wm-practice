@@ -456,7 +456,7 @@ Final line prints `(none — all clean)` when `docker ps` has nothing left excep
 
 ---
 
-## Cheat sheet — talking answers
+## Cheat sheet
 
 ```
 Stack:    FastAPI → OTel Collector → Jaeger (traces) + Prometheus → Grafana (metrics)
