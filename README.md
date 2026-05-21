@@ -98,7 +98,7 @@ The dashboard auto-refreshes every 5 seconds. If panels show "No data", confirm 
 
 You'll see 4 live panels:
 
-| Panel | Golden Signal | What to say |
+| Panel | Golden Signal | Analysis |
 |-------|--------------|------------------------------|
 | Traffic — Request Rate (rps) | Traffic | "We alert when rate is 2× the 30-min baseline — catches traffic spikes and DDoS before customers feel it" |
 | Errors — 5xx Rate | Errors | "SLO is 99.9% success rate. Alert fires at >1% error rate sustained for 2 minutes" |
@@ -147,7 +147,7 @@ bash observability/promql.sh --traffic
 - `[1m]` = 1-minute window for live incident detection; use `[5m]` in alert rules to reduce noise
 - `by (endpoint)` = one line per endpoint
 
-> *Say: "This is our traffic signal. In alerting I use [5m] to avoid noise from brief spikes, but in Explore I use [1m] to see what's happening right now during an incident."*
+> *Analysis: "This is our traffic signal. In alerting I use [5m] to avoid noise from brief spikes, but in Explore I use [1m] to see what's happening right now during an incident."*
 
 ---
 
@@ -178,7 +178,7 @@ bash observability/promql.sh --errors
 - `status_code=~"5.."` is a **regex label matcher** — matches 500, 502, 503, 504 in one expression
 - Dividing errors by total gives the ratio; ×100 for percentage
 
-> *Say: "Our SLO target is 99.9% — 0.1% max error rate. The `=~` operator does regex matching on label values. If this stays above 1% for 2 minutes the ErrorRateHigh alert fires."*
+> *Analysis: "Our SLO target is 99.9% — 0.1% max error rate. The `=~` operator does regex matching on label values. If this stays above 1% for 2 minutes the ErrorRateHigh alert fires."*
 
 ---
 
@@ -216,7 +216,7 @@ bash observability/promql.sh --latency
 - `le` = "less than or equal to", the bucket boundary; required for histogram_quantile
 - The p99−p50 gap is the tail latency story
 
-> *Say: "The gap between p50 and p99 reveals tail latency. p99 of 812ms while p50 is 58ms means some users wait 14× longer. Averages completely hide this."*
+> *Analysis: "The gap between p50 and p99 reveals tail latency. p99 of 812ms while p50 is 58ms means some users wait 14× longer. Averages completely hide this."*
 
 ---
 
@@ -236,7 +236,7 @@ bash observability/promql.sh --saturation
   instance=app:8080  job=wm-demo    3.000
 ```
 
-> *Say: "Saturation is the hardest golden signal because it's service-specific. For this web service, in-flight requests is a leading indicator — when it climbs, latency follows seconds later."*
+> *Analysis: "Saturation is the hardest golden signal because it's service-specific. For this web service, in-flight requests is a leading indicator — when it climbs, latency follows seconds later."*
 
 ---
 
@@ -262,7 +262,7 @@ bash observability/promql.sh --slo
   (all)                     98.120
 ```
 
-> *Say: "If this reads 98.1%, we've already burned through the monthly error budget in the first hour. That triggers a deploy freeze — stop shipping features, focus on reliability."*
+> *Analysis: "If this reads 98.1%, we've already burned through the monthly error budget in the first hour. That triggers a deploy freeze — stop shipping features, focus on reliability."*
 
 ---
 
@@ -273,7 +273,7 @@ bash observability/promql.sh --slo
 bash observability/promql.sh --query 'rate(http_requests_total{job="wm-demo"}[30s])'
 ```
 
-> *Say: "In production I query Prometheus directly from bash in runbooks and incident scripts. When a page fires at 3am I don't want to open a browser — I run the script and see numbers immediately."*
+> *Analysis: "In production I query Prometheus directly from bash in runbooks and incident scripts. When a page fires at 3am I don't want to open a browser — I run the script and see numbers immediately."*
 
 ---
 
@@ -282,7 +282,7 @@ bash observability/promql.sh --query 'rate(http_requests_total{job="wm-demo"}[30
 1. Open **http://localhost:9093** — Alertmanager UI shows any currently firing alerts
 2. Open **http://localhost:9090/alerts** — Prometheus shows all 4 alert rules and their current evaluation state
 
-> *Say: "Alert rules live in `observability/prometheus/alerts.yml` — version-controlled, reviewed in PRs. In production these route to PagerDuty for on-call and Slack for the engineering channel. The goal is to alert on symptoms (high error rate, high latency) not causes — so the on-call focuses on impact, not guessing root causes at 3am."*
+> *Analysis: "Alert rules live in `observability/prometheus/alerts.yml` — version-controlled, reviewed in PRs. In production these route to PagerDuty for on-call and Slack for the engineering channel. The goal is to alert on symptoms (high error rate, high latency) not causes — so the on-call focuses on impact, not guessing root causes at 3am."*
 
 ---
 
@@ -316,7 +316,7 @@ Example output:
   · Error budget = what's left before SLO breach
 ```
 
-**What to say:**
+**Analysis:**
 - **SLI** = the measured number — what we observe (success_rate: 98.12%)
 - **SLO** = internal target we commit to (99.9% — three nines)
 - **SLA** = contractual version of the SLO — the thing with financial penalties
@@ -337,7 +337,7 @@ Example output:
 - Child spans = `list-products`, `get-product`, `list-orders`, `create-order`
 - Any span > 400ms = the 5% slow-path kicking in
 
-> *Say: "OpenTelemetry is the merger of three competing standards — OpenTracing, OpenCensus, and OpenMetrics — into one vendor-neutral SDK and wire format. The app sends traces via OTLP gRPC to the OTel Collector, which forwards to Jaeger. To switch from Jaeger to Datadog or Honeycomb, I change one exporter line in otel-collector-config.yml — zero app code changes. That's the value of the vendor-neutral approach."*
+> *Analysis: "OpenTelemetry is the merger of three competing standards — OpenTracing, OpenCensus, and OpenMetrics — into one vendor-neutral SDK and wire format. The app sends traces via OTLP gRPC to the OTel Collector, which forwards to Jaeger. To switch from Jaeger to Datadog or Honeycomb, I change one exporter line in otel-collector-config.yml — zero app code changes. That's the value of the vendor-neutral approach."*
 
 ---
 
@@ -358,7 +358,7 @@ Output every 10 seconds:
   Rolling availability (last 4 checks): 87.5%
 ```
 
-> *Say: "Passive monitoring waits for a real user to hit an error before we know about it. Synthetic monitoring proactively runs scripted user journeys from outside the cluster every N seconds — it's how we catch a broken checkout at 3am before any customer does. In production we'd run this from multiple AWS regions and page on-call if availability drops below 99%. Weedmaps specifically called out synthetic monitoring flows in the JD — this is that."*
+> *Analysis: "Passive monitoring waits for a real user to hit an error before we know about it. Synthetic monitoring proactively runs scripted user journeys from outside the cluster every N seconds — it's how we catch a broken checkout at 3am before any customer does. In production we'd run this from multiple AWS regions and page on-call if availability drops below 99%. Weedmaps specifically called out synthetic monitoring flows in the JD — this is that."*
 
 Stop with **Ctrl+C**.
 
@@ -381,7 +381,7 @@ To test the auto-restart feature (requires a CrashLoopBackOff pod):
 python scripts/toil_check.py --auto-restart
 ```
 
-> *Say: "Google SRE defines toil as manual, repetitive, automatable operational work that scales linearly with service growth. Before this script, the on-call got paged, SSH'd into a node, ran kubectl describe, and decided whether to restart the pod. That's 5–10 minutes of toil per incident. This script runs as a cron job in CI — it pages only when auto-restart isn't enough, meaning the on-call gets actionable signal instead of noise."*
+> *Analysis: "Google SRE defines toil as manual, repetitive, automatable operational work that scales linearly with service growth. Before this script, the on-call got paged, SSH'd into a node, ran kubectl describe, and decided whether to restart the pod. That's 5–10 minutes of toil per incident. This script runs as a cron job in CI — it pages only when auto-restart isn't enough, meaning the on-call gets actionable signal instead of noise."*
 
 ---
 
@@ -435,7 +435,7 @@ commit → lint (ruff) + pytest (7 tests) → SAST (Bandit) ──┐
 
 **GitHub branching strategy** (they ask this in the JD):
 
-> *Say: "Trunk-based development — main is always deployable, feature branches live less than 2 days, and feature flags control what users see rather than long-lived branches. GitFlow doesn't work for multiple deploys per day because long-lived branches create merge conflicts and slow release cadence."*
+> *Analysis: "Trunk-based development — main is always deployable, feature branches live less than 2 days, and feature flags control what users see rather than long-lived branches. GitFlow doesn't work for multiple deploys per day because long-lived branches create merge conflicts and slow release cadence."*
 
 ---
 
