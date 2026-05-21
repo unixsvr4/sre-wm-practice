@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Toil reduction script — auto-detect pods in CrashLoopBackOff / OOMKilled.
-Demonstrates SRE toil concept for the Wm interview.
+Demonstrates SRE toil concept for the Wm talking.
 
 In SRE, "toil" = manual, repetitive, automatable operational work:
   Before: Ops gets paged → SSH into node → kubectl describe pod → decide action

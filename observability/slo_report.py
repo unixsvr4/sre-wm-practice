@@ -73,7 +73,7 @@ def main():
     print(f"  Status:                   {status}")
     print("=" * 54)
     print()
-    print("  Interview key points:")
+    print("  Talking key points:")
     print("  · SLI = this measured success_rate number")
     print("  · SLO = 99.9% internal target (this report enforces it)")
     print("  · SLA = contractual SLO signed with customers / legal")

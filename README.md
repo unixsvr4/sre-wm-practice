@@ -98,7 +98,7 @@ The dashboard auto-refreshes every 5 seconds. If panels show "No data", confirm 
 
 You'll see 4 live panels:
 
-| Panel | Golden Signal | What to say in the interview |
+| Panel | Golden Signal | What to say |
 |-------|--------------|------------------------------|
 | Traffic — Request Rate (rps) | Traffic | "We alert when rate is 2× the 30-min baseline — catches traffic spikes and DDoS before customers feel it" |
 | Errors — 5xx Rate | Errors | "SLO is 99.9% success rate. Alert fires at >1% error rate sustained for 2 minutes" |
@@ -107,82 +107,142 @@ You'll see 4 live panels:
 
 ---
 
-#### 3b. Run PromQL queries live in Explore
+#### 3b. Run PromQL queries — two ways
 
-**How to open Explore:**
-1. Click **☰** → **Explore** (compass icon in the left sidebar)
-2. Confirm the datasource dropdown at the top reads **Prometheus**
-3. Paste each query into the query box → press **Shift+Enter** or click **Run query**
-4. Set the time range (top right) to **Last 15 minutes** for best visibility
+Every query below works **in the Grafana UI** (visual) or **from the terminal** (instant, no browser needed). Both hit the same Prometheus API.
+
+**Quick bash reference — all golden signals at once:**
+```bash
+bash observability/promql.sh --all
+```
+
+**Grafana Explore — how to switch to Code mode:**
+1. Click **☰** → **Explore** (compass icon)
+2. In the query panel, find the **`Builder | Code`** toggle on the right side of the `A (Prometheus)` row — click **Code**
+3. The dropdowns disappear and a plain text box appears — paste your PromQL there
+4. Press **Shift+Enter** or click **Run query**
+5. Set the time range (top right) to **Last 15 minutes**
 
 ---
 
 **Query 1 — Traffic: request rate per endpoint**
+
+*Grafana UI — paste in Code mode:*
 ```promql
 sum(rate(http_requests_total{job="wm-demo"}[1m])) by (endpoint)
 ```
-Returns requests-per-second for each endpoint as separate lines.
+
+*Bash:*
+```bash
+bash observability/promql.sh --traffic
+```
+```
+━━━ TRAFFIC — Request Rate (rps) by endpoint
+  endpoint=/api/products    1.245
+  endpoint=/api/orders      1.245
+  endpoint=/api/products/1  0.311
+```
 
 - `rate()` computes per-second average over the time window
-- `[1m]` = 1-minute window — responsive for live incident detection
-- `by (endpoint)` = split by the endpoint label
+- `[1m]` = 1-minute window for live incident detection; use `[5m]` in alert rules to reduce noise
+- `by (endpoint)` = one line per endpoint
 
 > *Say: "This is our traffic signal. In alerting I use [5m] to avoid noise from brief spikes, but in Explore I use [1m] to see what's happening right now during an incident."*
 
 ---
 
 **Query 2 — Errors: 5xx error rate as a percentage**
+
+*Grafana UI — paste in Code mode:*
 ```promql
 sum(rate(http_requests_total{job="wm-demo",status_code=~"5.."}[1m]))
 /
 sum(rate(http_requests_total{job="wm-demo"}[1m]))
 * 100
 ```
-Returns a single number — the percentage of requests returning 5xx (e.g. `2.1` = 2.1%).
 
-- `status_code=~"5.."` is a **regex label matcher** — matches 500, 502, 503, 504
-- Dividing errors by total gives the error ratio; multiply by 100 for percentage
+*Bash:*
+```bash
+bash observability/promql.sh --errors
+```
+```
+━━━ ERRORS — 5xx Error Rate %
+  (all)                     1.980
 
-> *Say: "Our SLO target is 99.9% success — 0.1% max error rate. The app intentionally has a ~2% error rate to make this visible in the demo. The `=~` operator does regex matching on label values — it's how Prometheus lets you match a class of status codes without listing each one."*
+━━━ ERRORS — Count by status code
+  endpoint=/api/orders  status_code=200    1.223
+  endpoint=/api/orders  status_code=500    0.025
+  endpoint=/api/products/150  status_code=404    0.311
+```
+
+- `status_code=~"5.."` is a **regex label matcher** — matches 500, 502, 503, 504 in one expression
+- Dividing errors by total gives the ratio; ×100 for percentage
+
+> *Say: "Our SLO target is 99.9% — 0.1% max error rate. The `=~` operator does regex matching on label values. If this stays above 1% for 2 minutes the ErrorRateHigh alert fires."*
 
 ---
 
-**Query 3 — Latency: p99 per endpoint**
+**Query 3 — Latency: p99 and p50 per endpoint**
+
+*Grafana UI — paste Query A in Code mode, click `+ Add query` for Query B:*
 ```promql
+# Query A — p99
 histogram_quantile(0.99,
   sum(rate(http_request_duration_seconds_bucket{job="wm-demo"}[1m])) by (le, endpoint)
 )
-```
-Returns p99 latency in seconds for each endpoint.
 
-- `_bucket` is the histogram metric — counts how many requests fell into each latency band
-- `by (le, endpoint)` — `le` = "less than or equal to", the bucket boundary label; required for `histogram_quantile`
-- Change `0.99` → `0.50` for median latency
-
-**To overlay p50 on the same graph:** click **+ Add query** and paste:
-```promql
+# Query B — p50 (add as second query to overlay on the same graph)
 histogram_quantile(0.50,
   sum(rate(http_request_duration_seconds_bucket{job="wm-demo"}[1m])) by (le, endpoint)
 )
 ```
 
-> *Say: "The gap between p50 and p99 reveals tail latency. The app has a 5% slow path that sleeps 450–900ms — that's what drives the p99 up while p50 stays low. This is exactly the kind of issue averages hide but percentiles expose."*
+*Bash:*
+```bash
+bash observability/promql.sh --latency
+```
+```
+━━━ LATENCY — p99 per endpoint (seconds)
+  endpoint=/api/orders      0.812   ← 5% slow-path kicking in
+  endpoint=/api/products    0.079
+  endpoint=/api/products/1  0.049
+
+━━━ LATENCY — p50 per endpoint (seconds)
+  endpoint=/api/orders      0.058   ← p50 is fine; p99 is not
+  endpoint=/api/products    0.044
+```
+
+- `_bucket` metric records counts per latency band
+- `le` = "less than or equal to", the bucket boundary; required for histogram_quantile
+- The p99−p50 gap is the tail latency story
+
+> *Say: "The gap between p50 and p99 reveals tail latency. p99 of 812ms while p50 is 58ms means some users wait 14× longer. Averages completely hide this."*
 
 ---
 
 **Query 4 — Saturation: in-flight requests**
+
+*Grafana UI — paste in Code mode, then switch visualization to **Stat** for a live number:*
 ```promql
 http_requests_in_flight{job="wm-demo"}
 ```
-A real-time Gauge — the number of requests being processed at this exact moment.
 
-To display as a large number: click the **visualization type dropdown** (top-left of the panel) → select **Stat**.
+*Bash:*
+```bash
+bash observability/promql.sh --saturation
+```
+```
+━━━ SATURATION — In-flight requests
+  instance=app:8080  job=wm-demo    3.000
+```
 
-> *Say: "Saturation is the hardest golden signal to define because it's service-specific. For a web service, in-flight requests is a leading indicator — when this climbs, latency follows seconds later. For a database, saturation would be connection pool exhaustion. For a queue worker, it'd be queue depth."*
+> *Say: "Saturation is the hardest golden signal because it's service-specific. For this web service, in-flight requests is a leading indicator — when it climbs, latency follows seconds later."*
 
 ---
 
-**Query 5 — SLO burn rate: is the error budget burning too fast?**
+**Query 5 — SLO burn rate**
+
+*Grafana UI — paste in Code mode:*
 ```promql
 (
   1 - (
@@ -192,19 +252,28 @@ To display as a large number: click the **visualization type dropdown** (top-lef
   )
 ) * 100
 ```
-Returns success rate % over the past hour. Target: ≥ 99.9%.
 
-> *Say: "This is the SLO burn rate query on a 1-hour window. If it reads 99.5% right now, we've already burned 5× our daily error budget in one hour — at that rate the monthly budget exhausts in 6 hours. That triggers a deploy freeze and all hands on reliability. The 1-hour window catches fast burns; a 30-day window is used for monthly budget reporting."*
+*Bash:*
+```bash
+bash observability/promql.sh --slo
+```
+```
+━━━ SLO — Success rate % over 1h (target ≥ 99.9%)
+  (all)                     98.120
+```
+
+> *Say: "If this reads 98.1%, we've already burned through the monthly error budget in the first hour. That triggers a deploy freeze — stop shipping features, focus on reliability."*
 
 ---
 
-**Query 6 — Node CPU utilization from node-exporter**
-```promql
-100 - (avg by(instance)(rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100)
-```
-Returns CPU utilization % of the host running the containers.
+**Query 6 — Custom query (any PromQL expression)**
 
-> *Say: "This is system-level saturation from node-exporter, independent of the app. We correlate host CPU with in-flight requests to distinguish 'the app is slow' from 'the host is overloaded'. In EKS we'd use container_cpu_usage_seconds_total and kube-state-metrics for pod-level CPU."*
+*Bash only:*
+```bash
+bash observability/promql.sh --query 'rate(http_requests_total{job="wm-demo"}[30s])'
+```
+
+> *Say: "In production I query Prometheus directly from bash in runbooks and incident scripts. When a page fires at 3am I don't want to open a browser — I run the script and see numbers immediately."*
 
 ---
 
@@ -240,7 +309,7 @@ Example output:
   Status:                   ✗ SLO BREACHED — budget exhausted
 ======================================================
 
-  Interview key points:
+  Talking key points:
   · SLI = this measured success_rate number
   · SLO = 99.9% internal target
   · SLA = contractual SLO signed with customers / legal
@@ -385,7 +454,7 @@ Final line prints `(none — all clean)` when `docker ps` has nothing left excep
 
 ---
 
-## Cheat sheet — interview answers
+## Cheat sheet — talking answers
 
 ```
 Stack:    FastAPI → OTel Collector → Jaeger (traces) + Prometheus → Grafana (metrics)
