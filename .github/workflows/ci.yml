@@ -1,10 +1,9 @@
 name: CI
 
+# Reference pipeline — trigger manually only so GitHub doesn't run it on every push.
+# To run manually: GitHub → Actions → CI → Run workflow
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   lint-test:
