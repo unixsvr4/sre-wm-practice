@@ -416,19 +416,21 @@ The HPA scales 2→10 replicas at 60% CPU — handles traffic spikes without man
 
 ---
 
-### Step 9 — CircleCI pipeline reference
+### Step 9 — CI/CD pipeline reference
 
-Point to `.circleci/config.yml`. Walk through the 5 stages:
+Point to `.github/workflows/ci.yml` (**triggers on every push to main**). Walk through the 3 stages:
 
 ```
-commit → lint-test → build (multi-arch amd64+arm64) → deploy-staging
-       → smoke test → manual approval → promote-prod
+commit → lint (ruff) + pytest (7 tests) → SAST (Bandit) ──┐
+                                         → build + Trivy ──┘
 ```
 
 **Key talking points:**
+- Pipeline runs on every push — any broken code shows up in GitHub Actions within 2 minutes
+- Bandit SAST catches security hotspots (medium+ severity) without external tokens
+- Trivy CVE scan on the built image — set `exit-code: 1` to gate on CRITICAL/HIGH in production
 - Multi-arch build (`linux/amd64,linux/arm64`) — runs on both CI runners and M1 Macs
 - `maxUnavailable: 0` in the K8s deployment = zero-downtime rolling updates
-- Manual approval gate before prod = intentional, not reckless
 - This supports **trunk-based development** → multiple deploys per day
 
 **GitHub branching strategy** (they ask this in the JD):
