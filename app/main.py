@@ -116,7 +116,7 @@ def get_product(product_id: int):
 
 @app.get("/api/orders")
 def list_orders():
-    with tracer.start_as_current_span("list-orders") as span:
+    with tracer.start_as_current_span("list-orders"):
         # 2% error rate — enough to see on Grafana, not enough to burn SLO
         if random.random() < 0.02:
             ERROR_COUNT.labels(endpoint="/api/orders", error_type="db_timeout").inc()
